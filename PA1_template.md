@@ -1,4 +1,5 @@
 # Reproducible Research: Peer Assessment 1
+Steffen Ruefer  
 
 
 Prior to loading the data, the libraries required for data processing and plotting should be 

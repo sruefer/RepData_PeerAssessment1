@@ -1,5 +1,6 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "Steffen Ruefer"
 output: 
   html_document:
     keep_md: true
