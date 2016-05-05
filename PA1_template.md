@@ -1,36 +1,39 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 Prior to loading the data, the libraries required for data processing and plotting should be 
 installed and loaded (not shown in this report).
 These packages are: `dplyr`, `ggplot2`, `gridExtra`, `Amelia`. 
 
-```{r, include=FALSE}
-library(dplyr)
-library(ggplot2)
-library(gridExtra)
-library(Amelia)
-```
+
 
 
 ## Loading and preprocessing the data
 
 The data is loaded from the CSV file and the date feature is converted into date format.
 
-```{r}
+
+```r
 x.df <- read.csv("activity.csv")          # Read csv
 x.df$date <- as.Date(x.df$date)           # convert from chr to date
 ```
 
 Afterwards, the data is summarized to get some initial information about it.
 
-```{r}
+
+```r
 summary(x.df)
+```
+
+```
+##      steps             date               interval     
+##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8  
+##  Median :  0.00   Median :2012-10-31   Median :1177.5  
+##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5  
+##  3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2  
+##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0  
+##  NA's   :2304
 ```
 
 The summary shows that there are **2304 NA's** in the `steps` feature.
@@ -41,9 +44,14 @@ The summary shows that there are **2304 NA's** in the `steps` feature.
 To answer this question, some data processing is applied. Firstly, the initial data frame is 
 converted into a table format with the **dplyr** package and saved as new variable.
 
-```{r}
+
+```r
 x.tbl <- tbl_df(x.df)
 class(x.tbl)
+```
+
+```
+## [1] "tbl_df"     "tbl"        "data.frame"
 ```
 
 ### 1) Total Steps per Day
@@ -51,9 +59,23 @@ class(x.tbl)
 By grouping the data set by date, the daily total steps can be calculated as below. The first 6 
 rows of the summarized data set are displayed.
 
-```{r}
+
+```r
 x.by.date <- group_by(x.tbl, date) %>% summarise(total_steps = sum(steps, na.rm = TRUE))
 head(x.by.date)
+```
+
+```
+## Source: local data frame [6 x 2]
+## 
+##         date total_steps
+##       (date)       (int)
+## 1 2012-10-01           0
+## 2 2012-10-02         126
+## 3 2012-10-03       11352
+## 4 2012-10-04       12116
+## 5 2012-10-05       13294
+## 6 2012-10-06       15420
 ```
 
 
@@ -61,7 +83,8 @@ head(x.by.date)
 
 The histogram 
 
-```{r}
+
+```r
 p1 <- ggplot(x.by.date, aes(total_steps)) +             # call plot function
       geom_histogram(bins = 20) +                       # number of bins = 20
       theme_bw() +                                      # use bw theme
@@ -72,18 +95,21 @@ p1 <- ggplot(x.by.date, aes(total_steps)) +             # call plot function
 p1    # print plot
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)
+
 
 ### 3) Mean and Median of Daily Steps
 
 Mean and median values are calculated from the summarized data set:
 
-```{r}
+
+```r
 mean_steps <- round(mean(x.by.date$total_steps, na.rm = TRUE), digits = 0)
 median_steps <- median(x.by.date$total_steps, na.rm = TRUE)
 ```
 
-Mean number of daily steps are **`r mean_steps`**, and median number of daily steps are 
-**`r median_steps`**, showing a large difference between the two values. NA's were removed from 
+Mean number of daily steps are **9354**, and median number of daily steps are 
+**10395**, showing a large difference between the two values. NA's were removed from 
 this calculation.
 
 
@@ -93,7 +119,8 @@ this calculation.
 
 A time series plot can be created by grouping the data by *interval*.
 
-```{r}
+
+```r
 x.by.interval <- group_by(x.tbl, interval) %>% 
                  summarise(avg_steps = mean(steps, na.rm = TRUE))
 p2 <- ggplot(x.by.interval, aes(x = interval, y = avg_steps)) + 
@@ -105,14 +132,17 @@ p2 <- ggplot(x.by.interval, aes(x = interval, y = avg_steps)) +
 p2
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)
+
 ### 2) Maximum Steps Interval
 
-```{r timeseries}
+
+```r
 max_steps <- round(max(x.by.interval$avg_steps, na.rm = TRUE), digits = 0)
 max_interval <- x.by.interval[which.max(x.by.interval$avg_steps), 1]
 ```
 
-The interval with the maximum steps is **`r max_interval`**, with `r max_steps` steps.
+The interval with the maximum steps is **835**, with 206 steps.
 
 
 ## Imputing missing values
@@ -124,9 +154,12 @@ cases, entire days are missing. There are no dates where some data are missing a
 present. 
 By using the `Amelia` package, the NA's can be visualized.
 
-```{r}
+
+```r
 missmap(x.df, y.labels = c(), y.at = c())
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)
 
 ### 2) Imputation Strategy
 
@@ -136,11 +169,21 @@ NA's will be replaced by the mean number of steps per interval.
 ### 3) Dataset with Imputed Values
 
 
-```{r imputation,cache=TRUE}
+
+```r
 # Step 1: create new data set by copying old one
 x2.df <- x.df
 str(x2.df)
+```
 
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 # Step 2: Loop through each row and if NA then replace with mean of interval
 for (i in 1:nrow(x2.df)) {
       # Impute for NA's
@@ -151,7 +194,27 @@ for (i in 1:nrow(x2.df)) {
 
 # Step 3: Summary of data
 summary(x2.df)
+```
+
+```
+##      steps             date               interval     
+##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0  
+##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8  
+##  Median :  0.00   Median :2012-10-31   Median :1177.5  
+##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5  
+##  3rd Qu.: 27.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2  
+##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0
+```
+
+```r
 str(x2.df)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : num  2 0 0 0 0 2 1 1 0 1 ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 Result: no more NA's in *steps*.
@@ -160,7 +223,8 @@ Result: no more NA's in *steps*.
 
 To evaluate the result of the imputation, first we compare histograms.
 
-```{r}
+
+```r
 # Step 1: convert imputed data set to table format and group by date
 x2.tbl <- tbl_df(x2.df)
 x2.by.date <- group_by(x2.tbl, date) %>% 
@@ -177,22 +241,50 @@ p1B <- ggplot(x2.by.date, aes(total_steps)) +            # call plot function
 grid.arrange(p1B, p1, nrow = 2)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)
+
 The histograms show a similar shape; the main difference is that the bin with zeroes has decreased
 compared to the old histogram.
 
-```{r}
+
+```r
 mean_steps_2 <- round(mean(x2.by.date$total_steps), digits = 0)
 median_steps_2 <- median(x2.by.date$total_steps)
 print(paste0("Mean = ", mean_steps_2, " steps"))
+```
+
+```
+## [1] "Mean = 10766 steps"
+```
+
+```r
 print(paste0("Median = ", median_steps_2, " steps"))
+```
+
+```
+## [1] "Median = 10762 steps"
 ```
 
 The mean and median values are larger than the previous ones, with the mean value showing the 
 largest change. This is because the number of total steps per day has increased for the dates 
 with missing data from zero to average values, as observed at the first row printed below.
 
-```{r}
+
+```r
 head(x2.by.date)
+```
+
+```
+## Source: local data frame [6 x 2]
+## 
+##         date total_steps
+##       (date)       (dbl)
+## 1 2012-10-01       10762
+## 2 2012-10-02         126
+## 3 2012-10-03       11352
+## 4 2012-10-04       12116
+## 5 2012-10-05       13294
+## 6 2012-10-06       15420
 ```
 
 The new value for the first row is now 10762, compared to zero previously.
@@ -205,7 +297,8 @@ are added, the data will be consolidated and then plotted using the `facet_wrap`
 
 ### 1) New Factor Variable: Weekend and Weekday
 
-```{r new_features}
+
+```r
 # Step 1: add "day" and "day.type" features to the data set
 x2.df$day <- weekdays(x2.df$date)           # New feature "day"
 x2.df$day.type <- "weekday"                 # New feature: "day.type"
@@ -222,12 +315,22 @@ x2.tbl <- tbl_df(x2.df)
 str(x2.tbl)
 ```
 
+```
+## Classes 'tbl_df', 'tbl' and 'data.frame':	17568 obs. of  5 variables:
+##  $ steps   : num  2 0 0 0 0 2 1 1 0 1 ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ day     : Factor w/ 7 levels "Monday","Tuesday",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ day.type: Factor w/ 2 levels "weekday","weekend": 1 1 1 1 1 1 1 1 1 1 ...
+```
+
 ### 2) Time Series Panel Plot
 
 Two separate summarized data sets are created and then merged together as data for the time series 
 plot.
 
-```{r}
+
+```r
 # Step 4: create grouped, summarized data sets
 wd <- filter(x2.tbl, day.type == "weekday") %>%
       group_by(interval) %>%
@@ -251,6 +354,8 @@ p4 <- ggplot(x3.tbl, aes(x = interval, y = avg_steps)) +
       theme_bw()
 p4
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-13-1.png)
 
 In gerenal, the plots are similar in shape. However, there are differences at the left and ride
 side of the graph, and during weekends the activity is more evenly spread across the day. 
